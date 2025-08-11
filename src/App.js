@@ -64,6 +64,9 @@ const BADGE_DEFS = [
   { id: "pupil-labs", title: "Pupil labs" },
 ];
 
+// Load badge images
+require.context("./images", false, /\.(png|jpe?g|webp)$/);
+
 const EMAIL_RE = /@student\.nhlstenden\.com$/i;
 const emailValid = (email) => EMAIL_RE.test((email || "").trim());
 

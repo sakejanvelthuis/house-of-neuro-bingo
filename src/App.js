@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 
 function genId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -28,10 +29,20 @@ function saveLS(key, value) {
   }
 }
 
+// Load all badge images from the iamages folder.
+const badgeCtx = require.context("./iamages", false, /\.(png|jpe?g|webp|svg)$/);
+const BADGES = badgeCtx.keys().map((key) => {
+  const file = key.replace(/^\.\//, "");
+  const title = file.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+  const mod = badgeCtx(key);
+  const src = typeof mod === "string" ? mod : mod?.default || "";
+  return { name: file, title, src };
+});
+
 const seedStudents = [
-  { id: "s1", name: "Alex",  email: "alex@student.nhlstenden.com",  groupId: "g1", points: 10 },
-  { id: "s2", name: "Bo",    email: "bo@student.nhlstenden.com",    groupId: "g1", points: 5  },
-  { id: "s3", name: "Casey", email: "casey@student.nhlstenden.com", groupId: "g2", points: 12 },
+  { id: "s1", name: "Alex",  email: "alex@student.nhlstenden.com",  groupId: "g1", points: 10, badges: [] },
+  { id: "s2", name: "Bo",    email: "bo@student.nhlstenden.com",    groupId: "g1", points: 5,  badges: []  },
+  { id: "s3", name: "Casey", email: "casey@student.nhlstenden.com", groupId: "g2", points: 12, badges: [] },
 ];
 
 const seedGroups = [
@@ -111,20 +122,14 @@ export default function App() {
   const [groups,   setGroups]   = usePersistentState(LS_KEYS.groups,   seedGroups);
   const [awards,   setAwards]   = usePersistentState(LS_KEYS.awards,   seedAwards);
 
-  const getRoute = () => (typeof location !== 'undefined' && location.hash ? location.hash.slice(1) : '/student');
-  const [route, setRoute] = useState(getRoute());
-  useEffect(() => {
-    const onHash = () => setRoute(getRoute());
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
   const ADMIN_LS = 'nm_is_admin_v1';
   const [isAdmin, setIsAdmin] = useState(() => {
     try { return localStorage.getItem(ADMIN_LS) === '1'; } catch { return false; }
   });
   const allowAdmin = () => { try { localStorage.setItem(ADMIN_LS, '1'); } catch {} setIsAdmin(true); };
   const denyAdmin  = () => { try { localStorage.removeItem(ADMIN_LS); } catch {} setIsAdmin(false); };
+
+  const location = useLocation();
 
   const studentById = useMemo(() => {
     const m = new Map();
@@ -160,7 +165,10 @@ export default function App() {
 
   const addStudent = useCallback((name, email) => {
     const id = genId();
-    setStudents((prev) => [...prev, { id, name, email: email || undefined, groupId: null, points: 0 }]);
+    setStudents((prev) => [
+      ...prev,
+      { id, name, email: email || undefined, groupId: null, points: 0, badges: [] },
+    ]);
     return id;
   }, [setStudents]);
 
@@ -181,6 +189,13 @@ export default function App() {
   const assignStudentGroup = useCallback((studentId, groupId) => {
     if (!studentId) return;
     setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, groupId: groupId || null } : s)));
+  }, [setStudents]);
+
+  const setStudentBadges = useCallback((studentId, badges) => {
+    if (!studentId) return;
+    setStudents((prev) =>
+      prev.map((s) => (s.id === studentId ? { ...s, badges: badges || [] } : s))
+    );
   }, [setStudents]);
 
   const awardToStudent = useCallback((studentId, amount, reason) => {
@@ -225,45 +240,58 @@ export default function App() {
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">Neuromarketing Points · Prototype</h1>
           <div className="flex gap-2 text-sm">
-            <a href="#/student" className={`px-3 py-2 rounded-xl border ${route === '/student' ? 'bg-indigo-100' : 'bg-white'}`}>Studenten</a>
-            <a href="#/admin"   className={`px-3 py-2 rounded-xl border ${route === '/admin'   ? 'bg-indigo-100' : 'bg-white'}`}>Beheer</a>
-            {route === '/admin' && isAdmin && (
+            <Link to="/student" className={`px-3 py-2 rounded-xl border ${location.pathname === '/student' ? 'bg-indigo-100' : 'bg-white'}`}>Studenten</Link>
+            <Link to="/admin"   className={`px-3 py-2 rounded-xl border ${location.pathname === '/admin'   ? 'bg-indigo-100' : 'bg-white'}`}>Beheer</Link>
+            {location.pathname === '/admin' && isAdmin && (
               <button className="px-3 py-2 rounded-xl border" onClick={denyAdmin}>Uitloggen</button>
             )}
           </div>
         </header>
 
-        {route === '/admin' ? (
-          isAdmin ? (
-            <AdminView
-              students={students}
-              groups={groups}
-              awards={awards}
-              onAddStudent={addStudent}
-              onAddGroup={addGroup}
-              onAssignStudentGroup={assignStudentGroup}
-              onAwardStudent={awardToStudent}
-              onAwardGroup={awardToGroup}
-              onDeleteStudent={deleteStudent}
-              individualLeaderboard={individualLeaderboard}
-              groupLeaderboard={groupLeaderboard}
-              groupById={groupById}
-              onReset={resetAll}
-            />
-          ) : (
-            <AdminGate onAllow={allowAdmin} />
-          )
-        ) : (
-          <StudentView
-            students={students}
-            groups={groups}
-            awards={awards}
-            individualLeaderboard={individualLeaderboard}
-            groupLeaderboard={groupLeaderboard}
-            groupById={groupById}
-            onSelfSignup={addStudent}
+        <Routes>
+          <Route
+            path="/admin"
+            element={
+              isAdmin ? (
+                <AdminView
+                  students={students}
+                  groups={groups}
+                  awards={awards}
+                  onAddStudent={addStudent}
+                  onAddGroup={addGroup}
+                  onAssignStudentGroup={assignStudentGroup}
+                  onSetStudentBadges={setStudentBadges}
+                  onAwardStudent={awardToStudent}
+                  onAwardGroup={awardToGroup}
+                  onDeleteStudent={deleteStudent}
+                  individualLeaderboard={individualLeaderboard}
+                  groupLeaderboard={groupLeaderboard}
+                  groupById={groupById}
+                  badges={BADGES}
+                  onReset={resetAll}
+                />
+              ) : (
+                <AdminGate onAllow={allowAdmin} />
+              )
+            }
           />
-        )}
+          <Route
+            path="/student"
+            element={
+              <StudentView
+                students={students}
+                groups={groups}
+                awards={awards}
+                individualLeaderboard={individualLeaderboard}
+                groupLeaderboard={groupLeaderboard}
+                groupById={groupById}
+                onSelfSignup={addStudent}
+                badges={BADGES}
+              />
+            }
+          />
+          <Route path="/" element={<Navigate to="/student" replace />} />
+        </Routes>
       </div>
     </div>
   );
@@ -291,7 +319,7 @@ function AdminGate({ onAllow }) {
         {error && <div className="text-sm text-rose-600 mt-2">{error}</div>}
         <div className="mt-3 flex gap-2">
           <Button className="bg-indigo-600 text-white" onClick={submit}>Inloggen</Button>
-          <a href="#/student" className="px-4 py-2 rounded-2xl border">Terug naar studenten</a>
+          <Link to="/student" className="px-4 py-2 rounded-2xl border">Terug naar studenten</Link>
         </div>
       </Card>
     </div>
@@ -305,12 +333,14 @@ function AdminView({
   onAddStudent,
   onAddGroup,
   onAssignStudentGroup,
+  onSetStudentBadges,
   onAwardStudent,
   onAwardGroup,
   onDeleteStudent,
   individualLeaderboard,
   groupLeaderboard,
   groupById,
+  badges,
   onReset,
 }) {
   const [newStudent, setNewStudent] = useState("");
@@ -325,6 +355,13 @@ function AdminView({
   const [awardGroupId, setAwardGroupId] = useState(groups[0]?.id || "");
   const [awardAmount, setAwardAmount] = useState(5);
   const [awardReason, setAwardReason] = useState("");
+
+  const [badgeStudentId, setBadgeStudentId] = useState("");
+  useEffect(() => {
+    if (students.length && !students.find((s) => s.id === badgeStudentId)) {
+      setBadgeStudentId(students[0]?.id || "");
+    }
+  }, [students, badgeStudentId]);
 
   useEffect(() => {
     if (students.length === 0) {
@@ -425,6 +462,43 @@ function AdminView({
               Verwijder student
             </Button>
           </div>
+        </div>
+      </Card>
+
+      <Card title="Badges toewijzen">
+        <div className="grid grid-cols-1 gap-2">
+          <Select value={badgeStudentId} onChange={setBadgeStudentId}>
+            <option value="">Kies student…</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+          {badgeStudentId && (
+            <div className="grid grid-cols-1 gap-1 max-h-48 overflow-auto p-1 border rounded-xl">
+              {badges.map((b) => {
+                const student = students.find((s) => s.id === badgeStudentId);
+                const checked = student?.badges?.includes(b.name) || false;
+                return (
+                  <label key={b.name} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const cur = student?.badges || [];
+                        const next = e.target.checked
+                          ? [...cur, b.name]
+                          : cur.filter((x) => x !== b.name);
+                        onSetStudentBadges(badgeStudentId, next);
+                      }}
+                    />
+                    <span>{b.title}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -615,13 +689,14 @@ function AdminView({
   );
 }
 
-function StudentView({ students, groups, awards, individualLeaderboard, groupLeaderboard, groupById, onSelfSignup }) {
+function StudentView({ students, groups, awards, individualLeaderboard, groupLeaderboard, groupById, onSelfSignup, badges }) {
   const [selectedStudentId, setSelectedStudentId] = useState(students[0]?.id || "");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupName, setSignupName] = useState("");
 
   const me = students.find((s) => s.id === selectedStudentId) || null;
   const myGroup = me?.groupId ? groupById.get(me.groupId) : null;
+  const myBadges = me?.badges || [];
 
   const myAwards = useMemo(() => {
     return awards.filter((a) => (a.type === "student" && a.targetId === selectedStudentId) || (a.type === "group" && myGroup && a.targetId === myGroup.id));
@@ -690,6 +765,28 @@ function StudentView({ students, groups, awards, individualLeaderboard, groupLea
           </div>
         )}
       </Card>
+
+      {me && (
+        <Card title="Jouw badges">
+          {myBadges.length ? (
+            <div className="flex flex-wrap gap-2">
+              {myBadges.map((bn) => {
+                const b = badges.find((x) => x.name === bn);
+                return b ? (
+                  <img
+                    key={bn}
+                    src={b.src}
+                    alt={b.title}
+                    className="w-20 h-20 object-contain"
+                  />
+                ) : null;
+              })}
+            </div>
+          ) : (
+            <div className="text-sm">Geen badges.</div>
+          )}
+        </Card>
+      )}
 
       <Card title="Nog geen account? Zelf aanmaken">
         <div className="grid grid-cols-1 gap-2">

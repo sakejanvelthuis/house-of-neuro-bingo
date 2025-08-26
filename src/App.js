@@ -323,20 +323,31 @@ function AdminPreview({ selectedStudentId, setSelectedStudentId }) {
 }
 
 function RoleSelect() {
+  const [mode, setMode] = useState('login'); // 'login' or 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [error, setError] = useState('');
   const [teachers, setTeachers] = useTeachers();
+  const [students, setStudents] = useStudents();
 
-  const handleSubmit = () => {
+  const handleLogin = () => {
     const norm = email.trim().toLowerCase();
     
     if (norm.endsWith('@student.nhlstenden.com')) {
-      window.location.hash = '/student';
+      const student = students.find(s => s.email?.toLowerCase() === norm);
+      if (student && bcrypt.compareSync(password, student.passwordHash)) {
+        window.location.hash = '/student';
+      } else {
+        setError('Onjuiste e-mail of wachtwoord.');
+      }
     } else if (norm.endsWith('@nhlstenden.com')) {
-      // Check teacher credentials
-      const teacher = teachers.find((t) => t.email.toLowerCase() === norm);
+      const teacher = teachers.find(t => t.email.toLowerCase() === norm);
       if (teacher && bcrypt.compareSync(password, teacher.passwordHash)) {
+        if (!teacher.approved) {
+          setError('Account wacht nog op goedkeuring van een beheerder.');
+          return;
+        }
         try { 
           localStorage.setItem('nm_is_admin_v1', '1');
         } catch {}
@@ -349,43 +360,146 @@ function RoleSelect() {
     }
   };
 
+  const handleSignup = () => {
+    const norm = email.trim().toLowerCase();
+    
+    if (!password.trim() || password !== password2) {
+      setError('Wachtwoorden komen niet overeen.');
+      return;
+    }
+
+    if (norm.endsWith('@student.nhlstenden.com')) {
+      if (students.some(s => s.email?.toLowerCase() === norm)) {
+        setError('E-mailadres bestaat al.');
+        return;
+      }
+      const hash = bcrypt.hashSync(password.trim(), 10);
+      setStudents(prev => [...prev, { 
+        id: genId(), 
+        email: norm, 
+        passwordHash: hash,
+        name: norm.split('@')[0]
+      }]);
+      window.location.hash = '/student';
+    } else if (norm.endsWith('@nhlstenden.com')) {
+      if (teachers.some(t => t.email.toLowerCase() === norm)) {
+        setError('E-mailadres bestaat al.');
+        return;
+      }
+      const hash = bcrypt.hashSync(password.trim(), 10);
+      setTeachers(prev => [...prev, { 
+        id: genId(), 
+        email: norm, 
+        passwordHash: hash,
+        approved: false, // Add approved status
+        createdAt: new Date().toISOString()
+      }]);
+      setError('Account aangemaakt. Wacht op goedkeuring van een beheerder.');
+      setMode('login');
+      // Remove auto-login for unapproved admin accounts
+      return;
+    } else {
+      setError('Gebruik een @student.nhlstenden.com of @nhlstenden.com adres.');
+    }
+  };
+
   return (
     <div className="max-w-md mx-auto">
-      <Card title="Log in">
+      <Card title={mode === 'login' ? 'Log in' : 'Account aanmaken'}>
         <TextInput
           value={email}
           onChange={setEmail}
           placeholder="E-mail"
           className="mb-2"
         />
-        {email.endsWith('@nhlstenden.com') && (
+        <TextInput
+          type="password"
+          value={password}
+          onChange={setPassword}
+          placeholder="Wachtwoord"
+          className="mb-2"
+        />
+        {mode === 'signup' && (
           <TextInput
             type="password"
-            value={password}
-            onChange={setPassword}
-            placeholder="Wachtwoord"
+            value={password2}
+            onChange={setPassword2}
+            placeholder="Bevestig wachtwoord"
             className="mb-4"
           />
         )}
         {error && <div className="text-sm text-rose-600 mb-2">{error}</div>}
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <Button
-            className="flex-1 bg-indigo-600 text-white"
-            onClick={handleSubmit}
-            disabled={!email.trim() || (email.endsWith('@nhlstenden.com') && !password.trim())}
+            className="w-full bg-indigo-600 text-white"
+            onClick={mode === 'login' ? handleLogin : handleSignup}
+            disabled={!email.trim() || !password.trim() || (mode === 'signup' && !password2.trim())}
           >
-            Inloggen
+            {mode === 'login' ? 'Inloggen' : 'Account aanmaken'}
           </Button>
-          {email.endsWith('@nhlstenden.com') && (
-            <Button
-              className="border"
-              onClick={() => window.location.hash = '/admin'}
-            >
-              Account aanmaken
-            </Button>
-          )}
+          <Button
+            className="w-full border"
+            onClick={() => {
+              setMode(mode === 'login' ? 'signup' : 'login');
+              setError('');
+              setPassword('');
+              setPassword2('');
+            }}
+          >
+            {mode === 'login' ? 'Account aanmaken' : 'Terug naar inloggen'}
+          </Button>
         </div>
       </Card>
     </div>
+  );
+}
+
+function PendingAdmins() {
+  const [teachers, setTeachers] = useTeachers();
+  const pendingTeachers = teachers.filter(t => !t.approved);
+
+  const handleApprove = (teacherId) => {
+    setTeachers(prev => prev.map(t => 
+      t.id === teacherId ? {...t, approved: true} : t
+    ));
+  };
+
+  const handleReject = (teacherId) => {
+    setTeachers(prev => prev.filter(t => t.id !== teacherId));
+  };
+
+  if (pendingTeachers.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card title="Beheerders in afwachting van goedkeuring">
+      <div className="space-y-4">
+        {pendingTeachers.map(teacher => (
+          <div key={teacher.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <div className="font-medium">{teacher.email}</div>
+              <div className="text-sm text-gray-500">
+                Aangevraagd op {new Date(teacher.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="bg-green-600 text-white"
+                onClick={() => handleApprove(teacher.id)}
+              >
+                Goedkeuren
+              </Button>
+              <Button
+                className="bg-red-600 text-white"
+                onClick={() => handleReject(teacher.id)}
+              >
+                Afwijzen
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

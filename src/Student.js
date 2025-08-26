@@ -195,6 +195,69 @@ export default function Student({ selectedStudentId, setSelectedStudentId }) {
           </div>
         )}
 
+        <Card title="Verdiende badges">
+          {me ? (
+            <>
+              <div className="sticky top-0 bg-white pb-4 z-10">
+                <Button className="bg-indigo-600 text-white" onClick={() => setShowBadges(false)}>
+                  Terug naar puntenoverzicht
+                </Button>
+              </div>
+              <BadgeOverview badgeDefs={badgeDefs} earnedBadges={myBadges} />
+            </>
+          ) : (
+            <p className="text-sm text-neutral-600">Selecteer een student om badges te bekijken.</p>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {me && (
+        <div className="flex items-center justify-between mb-4">
+          <span>Ingelogd als {me.name}{me.email ? ` (${me.email})` : ''}</span>
+          <Button className="bg-indigo-600 text-white" onClick={handleLogout}>Uitloggen</Button>
+        </div>
+      )}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <Card title="Badges" className="lg:col-span-3">
+          {me ? (
+            <Button className="bg-indigo-600 text-white" onClick={() => setShowBadges(true)}>
+              Bekijk badges
+            </Button>
+          ) : (
+            <p className="text-sm text-neutral-600">Selecteer een student om badges te bekijken.</p>
+          )}
+        </Card>
+
+        <Card title="Jouw recente activiteiten" className="lg:col-span-2 max-h-[320px] overflow-auto">
+        <ul className="space-y-2 text-sm">
+          {myAwards.length === 0 && <li>Geen recente items.</li>}
+          {myAwards.map((a) => {
+            const badge = a.badgeId ? badgeDefs.find((b) => b.id === a.badgeId) : null;
+            return (
+              <li key={a.id} className="flex justify-between gap-2">
+                <span>
+                  {new Date(a.ts).toLocaleString()} ·
+                  {badge
+                    ? ` Badge — ${badge?.title || ''}`
+                    : `${a.type === 'student' ? 'Individueel' : `Groep (${myGroup?.name || '-'})`}${a.reason ? ` — ${a.reason}` : ''}`}
+                </span>
+                {!badge && (
+                  <span className={`font-semibold ${a.amount >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {a.amount >= 0 ? '+' : ''}
+                    {a.amount}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        </Card>
+
+
         {/* Remove the old image from the login section */}
         {!selectedStudentId ? (
           <div className="max-w-md mx-auto">

@@ -57,17 +57,34 @@ export default function Admin() {
     return id;
   }, [setGroups]);
 
-  const toggleStudentBadge = useCallback((studentId, badgeId, hasBadge) => {
-    if (!studentId || !badgeId) return;
-    setStudents((prev) =>
-      prev.map((s) => {
-        if (s.id !== studentId) return s;
-        const current = new Set(s.badges || []);
-        if (hasBadge) current.add(badgeId); else current.delete(badgeId);
-        return { ...s, badges: Array.from(current) };
-      })
-    );
-  }, [setStudents]);
+  const toggleStudentBadge = useCallback(
+    (studentId, badgeId, hasBadge) => {
+      if (!studentId || !badgeId) return;
+      setStudents((prev) =>
+        prev.map((s) => {
+          if (s.id !== studentId) return s;
+          const current = new Set(s.badges || []);
+          if (hasBadge) current.add(badgeId);
+          else current.delete(badgeId);
+          return { ...s, badges: Array.from(current) };
+        })
+      );
+      if (hasBadge) {
+        const badge = badgeDefs.find((b) => b.id === badgeId);
+        const award = {
+          id: genId(),
+          ts: Date.now(),
+          type: 'student',
+          targetId: studentId,
+          amount: 0,
+          reason: `Badge toegekend: ${badge?.title || badgeId}`,
+          badgeId,
+        };
+        setAwards((prev) => [award, ...prev].slice(0, 500));
+      }
+    },
+    [setStudents, setAwards, badgeDefs]
+  );
 
   const awardToStudent = useCallback((studentId, amount, reason) => {
     if (!studentId || !Number.isFinite(amount)) return;

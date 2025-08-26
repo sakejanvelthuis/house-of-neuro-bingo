@@ -5,6 +5,7 @@ import useStudents from './hooks/useStudents';
 import useGroups from './hooks/useGroups';
 import useAwards from './hooks/useAwards';
 import { genId, emailValid, getIndividualLeaderboard, getGroupLeaderboard, nameFromEmail } from './utils';
+import { hashPassword, comparePassword } from './utils/password';
 import useBadges from './hooks/useBadges';
 
 export default function Student({ selectedStudentId, setSelectedStudentId }) {
@@ -28,9 +29,10 @@ export default function Student({ selectedStudentId, setSelectedStudentId }) {
 
   const addStudent = useCallback((name, email, password = '') => {
     const id = genId();
+    const passwordHash = password ? hashPassword(password) : '';
     setStudents((prev) => [
       ...prev,
-      { id, name, email: email || undefined, password, groupId: null, points: 0, badges: [] }
+      { id, name, email: email || undefined, passwordHash, groupId: null, points: 0, badges: [] }
     ]);
     return id;
   }, [setStudents]);
@@ -80,7 +82,7 @@ export default function Student({ selectedStudentId, setSelectedStudentId }) {
         setLoginEmail('');
         setLoginPassword('');
         setLoginError('');
-      } else if ((existing.password || '') === pass) {
+      } else if (comparePassword(pass, existing.passwordHash)) {
         setSelectedStudentId(existing.id);
         setLoginEmail('');
         setLoginPassword('');
@@ -132,8 +134,9 @@ export default function Student({ selectedStudentId, setSelectedStudentId }) {
     if (!newPassword.trim() || newPassword !== newPassword2) return;
     const id = resetStudent.id;
     const pass = newPassword.trim();
+    const hash = hashPassword(pass);
     setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, password: pass, tempCode: undefined } : s))
+      prev.map((s) => (s.id === id ? { ...s, passwordHash: hash, tempCode: undefined } : s))
     );
     setResetStudent(null);
     setSelectedStudentId(id);

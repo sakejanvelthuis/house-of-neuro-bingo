@@ -324,14 +324,26 @@ function AdminPreview({ selectedStudentId, setSelectedStudentId }) {
 
 function RoleSelect() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [teachers, setTeachers] = useTeachers();
 
-  const submit = () => {
+  const handleSubmit = () => {
     const norm = email.trim().toLowerCase();
+    
     if (norm.endsWith('@student.nhlstenden.com')) {
       window.location.hash = '/student';
     } else if (norm.endsWith('@nhlstenden.com')) {
-      window.location.hash = '/admin';
+      // Check teacher credentials
+      const teacher = teachers.find((t) => t.email.toLowerCase() === norm);
+      if (teacher && bcrypt.compareSync(password, teacher.passwordHash)) {
+        try { 
+          localStorage.setItem('nm_is_admin_v1', '1');
+        } catch {}
+        window.location.hash = '/admin';
+      } else {
+        setError('Onjuiste e-mail of wachtwoord.');
+      }
     } else {
       setError('Gebruik een @student.nhlstenden.com of @nhlstenden.com adres.');
     }
@@ -344,16 +356,35 @@ function RoleSelect() {
           value={email}
           onChange={setEmail}
           placeholder="E-mail"
-          className="mb-4"
+          className="mb-2"
         />
+        {email.endsWith('@nhlstenden.com') && (
+          <TextInput
+            type="password"
+            value={password}
+            onChange={setPassword}
+            placeholder="Wachtwoord"
+            className="mb-4"
+          />
+        )}
         {error && <div className="text-sm text-rose-600 mb-2">{error}</div>}
-        <Button
-          className="w-full bg-indigo-600 text-white"
-          onClick={submit}
-          disabled={!email.trim()}
-        >
-          Ga verder
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="flex-1 bg-indigo-600 text-white"
+            onClick={handleSubmit}
+            disabled={!email.trim() || (email.endsWith('@nhlstenden.com') && !password.trim())}
+          >
+            Inloggen
+          </Button>
+          {email.endsWith('@nhlstenden.com') && (
+            <Button
+              className="border"
+              onClick={() => window.location.hash = '/admin'}
+            >
+              Account aanmaken
+            </Button>
+          )}
+        </div>
       </Card>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Admin from './Admin';
 import Student from './Student';
 import AdminRoster from './AdminRoster';
-import { Card, Button, TextInput } from './components/ui';
+import { Card, Button, TextInput, Splash } from './components/ui';
 import usePersistentState from './hooks/usePersistentState';
 import useStudents from './hooks/useStudents';
 import useTeachers from './hooks/useTeachers';
@@ -52,18 +52,8 @@ export default function App() {
   }, [route]);
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-4 md:p-8 text-slate-800 overflow-hidden">
-      {route === '/' && (
-        <picture className="pointer-events-none absolute inset-0 m-auto h-full w-auto max-h-screen">
-          <source srcSet="/images/voorpagina.webp" type="image/webp" />
-          <source srcSet="/images/voorpagina.png" type="image/png" />
-          <img
-            src="/images/voorpagina.jpg"
-            alt="Voorpagina"
-            className="h-full w-auto object-contain"
-          />
-        </picture>
-      )}
+    <div className="min-h-screen">
+      <Splash />
       <div className="relative z-10 max-w-6xl mx-auto">
         <header className="app-header">
           <h1 className="app-title">Neuromarketing Housepoints</h1>

@@ -171,44 +171,46 @@ export default function Student({ selectedStudentId, setSelectedStudentId }) {
     );
   }
 
-  return (
-    <div className="relative">
-      {/* Add background image container */}
-      <div className="fixed inset-0 z-0">
-        <img
-          src={process.env.PUBLIC_URL + '/images/voorpagina.png'}
-          alt="Background"
-          className="w-full h-full object-cover"
-        />
-      </div>
+  if (showBadges) {
+    return (
+      <div className="relative">
+        {/* Add background image container */}
+        <div className="fixed inset-0 z-0">
+          <img
+            src={process.env.PUBLIC_URL + '/images/voorpagina.png'}
+            alt="Background"
+            className="w-full h-full object-cover"
+          />
+        </div>
 
-      {/* Main content with higher z-index */}
-      <div className="relative z-10">
-        {me && (
-          <div className="flex items-center justify-between mb-4">
-            <span className="bg-white/90 px-2 py-1 rounded">
-              Ingelogd als {me.name}{me.email ? ` (${me.email})` : ''}
-            </span>
-            <Button className="bg-indigo-600 text-white" onClick={handleLogout}>
-              Uitloggen
-            </Button>
-          </div>
-        )}
-
-        <Card title="Verdiende badges">
-          {me ? (
-            <>
-              <div className="sticky top-0 bg-white pb-4 z-10">
-                <Button className="bg-indigo-600 text-white" onClick={() => setShowBadges(false)}>
-                  Terug naar puntenoverzicht
-                </Button>
-              </div>
-              <BadgeOverview badgeDefs={badgeDefs} earnedBadges={myBadges} />
-            </>
-          ) : (
-            <p className="text-sm text-neutral-600">Selecteer een student om badges te bekijken.</p>
+        {/* Main content with higher z-index */}
+        <div className="relative z-10">
+          {me && (
+            <div className="flex items-center justify-between mb-4">
+              <span className="bg-white/90 px-2 py-1 rounded">
+                Ingelogd als {me.name}{me.email ? ` (${me.email})` : ''}
+              </span>
+              <Button className="bg-indigo-600 text-white" onClick={handleLogout}>
+                Uitloggen
+              </Button>
+            </div>
           )}
-        </Card>
+
+          <Card title="Verdiende badges">
+            {me ? (
+              <>
+                <div className="sticky top-0 bg-white pb-4 z-10">
+                  <Button className="bg-indigo-600 text-white" onClick={() => setShowBadges(false)}>
+                    Terug naar puntenoverzicht
+                  </Button>
+                </div>
+                <BadgeOverview badgeDefs={badgeDefs} earnedBadges={myBadges} />
+              </>
+            ) : (
+              <p className="text-sm text-neutral-600">Selecteer een student om badges te bekijken.</p>
+            )}
+          </Card>
+        </div>
       </div>
     );
   }

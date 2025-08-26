@@ -7,7 +7,7 @@ import usePersistentState from './hooks/usePersistentState';
 import useStudents from './hooks/useStudents';
 import useTeachers from './hooks/useTeachers';
 import { teacherEmailValid, genId } from './utils';
-import bcrypt from 'bcryptjs';
+import { hashPassword, comparePassword } from './utils/password';
 
 export default function App() {
   const getRoute = () => (typeof location !== 'undefined' && location.hash ? location.hash.slice(1) : '/');
@@ -123,7 +123,7 @@ function AdminGate({ onAllow }) {
       return;
     }
     const t = teachers.find((te) => te.email.toLowerCase() === norm);
-    if (t && bcrypt.compareSync(loginPassword, t.passwordHash)) {
+    if (t && comparePassword(loginPassword, t.passwordHash)) {
       setLoginError('');
       onAllow();
     } else {
@@ -142,7 +142,7 @@ function AdminGate({ onAllow }) {
       setSignupError('E-mailadres bestaat al.');
       return;
     }
-    const hash = bcrypt.hashSync(signupPassword.trim(), 10);
+    const hash = hashPassword(signupPassword.trim());
     setTeachers((prev) => [...prev, { id: genId(), email: norm, passwordHash: hash }]);
     setSignupEmail('');
     setSignupPassword('');
@@ -336,14 +336,14 @@ function RoleSelect() {
     
     if (norm.endsWith('@student.nhlstenden.com')) {
       const student = students.find(s => s.email?.toLowerCase() === norm);
-      if (student && bcrypt.compareSync(password, student.passwordHash)) {
+      if (student && comparePassword(password, student.passwordHash)) {
         window.location.hash = '/student';
       } else {
         setError('Onjuiste e-mail of wachtwoord.');
       }
     } else if (norm.endsWith('@nhlstenden.com')) {
       const teacher = teachers.find(t => t.email.toLowerCase() === norm);
-      if (teacher && bcrypt.compareSync(password, teacher.passwordHash)) {
+      if (teacher && comparePassword(password, teacher.passwordHash)) {
         if (!teacher.approved) {
           setError('Account wacht nog op goedkeuring van een beheerder.');
           return;
@@ -373,7 +373,7 @@ function RoleSelect() {
         setError('E-mailadres bestaat al.');
         return;
       }
-      const hash = bcrypt.hashSync(password.trim(), 10);
+      const hash = hashPassword(password.trim());
       setStudents(prev => [...prev, { 
         id: genId(), 
         email: norm, 
@@ -386,7 +386,7 @@ function RoleSelect() {
         setError('E-mailadres bestaat al.');
         return;
       }
-      const hash = bcrypt.hashSync(password.trim(), 10);
+      const hash = hashPassword(password.trim());
       setTeachers(prev => [...prev, { 
         id: genId(), 
         email: norm, 

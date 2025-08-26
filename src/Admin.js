@@ -9,7 +9,7 @@ import Student from './Student';
 import useBadges from './hooks/useBadges';
 import usePersistentState from './hooks/usePersistentState';
 import useTeachers from './hooks/useTeachers';
-import bcrypt from 'bcryptjs';
+import { hashPassword } from './utils/password';
 
 export default function Admin() {
   const [students, setStudents] = useStudents();
@@ -40,9 +40,10 @@ export default function Admin() {
 
   const addStudent = useCallback((name, email, password = '') => {
     const id = genId();
+    const passwordHash = password ? hashPassword(password) : '';
     setStudents((prev) => [
       ...prev,
-      { id, name, email: email || undefined, password, groupId: null, points: 0, badges: [] }
+      { id, name, email: email || undefined, passwordHash, groupId: null, points: 0, badges: [] }
     ]);
     return id;
   }, [setStudents]);
@@ -108,7 +109,7 @@ export default function Admin() {
   const resetTeacherPassword = useCallback((id) => {
     const pwd = window.prompt('Nieuw wachtwoord:');
     if (!pwd?.trim()) return;
-    const hash = bcrypt.hashSync(pwd.trim(), 10);
+    const hash = hashPassword(pwd.trim());
     setTeachers((prev) =>
       prev.map((t) => (t.id === id ? { ...t, passwordHash: hash } : t))
     );
@@ -181,7 +182,7 @@ export default function Admin() {
     const code = Math.random().toString(36).slice(2, 8);
     setStudents((prev) =>
       prev.map((s) =>
-        s.id === resetStudentId ? { ...s, password: '', tempCode: code } : s
+        s.id === resetStudentId ? { ...s, passwordHash: '', tempCode: code } : s
       )
     );
     setResetCode(code);
@@ -581,7 +582,7 @@ export default function Admin() {
               onClick={() => {
                 const email = newTeacherEmail.trim().toLowerCase();
                 if (teachers.some((t) => t.email.toLowerCase() === email)) return;
-                const hash = bcrypt.hashSync(newTeacherPassword.trim(), 10);
+                const hash = hashPassword(newTeacherPassword.trim());
                 setTeachers((prev) => [...prev, { id: genId(), email, passwordHash: hash }]);
                 setNewTeacherEmail('');
                 setNewTeacherPassword('');

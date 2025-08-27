@@ -1,6 +1,126 @@
 [
-  { "id": "student1", "name": "student1", "email": "student1@example.com", "password": "1234", "groupId": null, "points": 0, "badges": [] },
-  { "id": "student2", "name": "student2", "email": "student2@example.com", "password": "1234", "groupId": null, "points": 0, "badges": [] },
-  { "id": "student3", "name": "student3", "email": "student3@example.com", "password": "1234", "groupId": null, "points": 0, "badges": [] },
-  { "id": "student4", "name": "student4", "email": "student4@example.com", "password": "1234", "groupId": null, "points": 0, "badges": [] }
+  {
+    "id": "student1",
+    "name": "student1",
+    "email": "student1@example.com",
+    "password": "1234",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [
+        "Drake",
+        "Adele",
+        "Kendrick Lamar"
+      ],
+      "Q2": [
+        "Breaking Bad",
+        "Dark",
+        "Friends"
+      ],
+      "Q3": [
+        "Pizza",
+        "Sushi",
+        "Taco"
+      ],
+      "Q4": [
+        "Voetbal",
+        "Tennis",
+        "Zwemmen"
+      ]
+    }
+  },
+  {
+    "id": "student2",
+    "name": "student2",
+    "email": "student2@example.com",
+    "password": "1234",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [
+        "Adele",
+        "Beyoncé",
+        "Rihanna"
+      ],
+      "Q2": [
+        "Friends",
+        "Game of Thrones",
+        "Sherlock"
+      ],
+      "Q3": [
+        "Sushi",
+        "Burger",
+        "Pasta"
+      ],
+      "Q4": [
+        "Basketbal",
+        "Tennis",
+        "Hockey"
+      ]
+    }
+  },
+  {
+    "id": "student3",
+    "name": "student3",
+    "email": "student3@example.com",
+    "password": "1234",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [
+        "Drake",
+        "Coldplay",
+        "Imagine Dragons"
+      ],
+      "Q2": [
+        "Dark",
+        "The Office",
+        "Breaking Bad"
+      ],
+      "Q3": [
+        "Pizza",
+        "Ramen",
+        "Taco"
+      ],
+      "Q4": [
+        "Voetbal",
+        "Zwemmen",
+        "Judo"
+      ]
+    }
+  },
+  {
+    "id": "student4",
+    "name": "student4",
+    "email": "student4@example.com",
+    "password": "1234",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [
+        "Adele",
+        "Drake",
+        "Taylor Swift"
+      ],
+      "Q2": [
+        "Friends",
+        "Dark",
+        "Lupin"
+      ],
+      "Q3": [
+        "Sushi",
+        "Pizza",
+        "Salade"
+      ],
+      "Q4": [
+        "Voetbal",
+        "Tennis",
+        "Basketbal"
+      ]
+    }
+  }
 ]

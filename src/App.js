@@ -85,7 +85,20 @@ export default function App() {
             />
           )
         ) : route === '/bingo' ? (
-          <Bingo />
+          selectedStudentId ? (
+            <Bingo selectedStudentId={selectedStudentId} />
+          ) : (
+            <Auth
+              onAdminLogin={() => {
+                allowAdmin();
+                window.location.hash = '/admin';
+              }}
+              onStudentLogin={(id) => {
+                setSelectedStudentId(id);
+                window.location.hash = '/bingo';
+              }}
+            />
+          )
         ) : route === '/roster' ? (
           isAdmin ? (
             <AdminRoster />

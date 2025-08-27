@@ -1,11 +1,15 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Card, Button, TextInput } from './components/ui';
+import { Card as BaseCard, Button, TextInput } from './components/ui';
 import BadgeOverview from './components/BadgeOverview';
 import useStudents from './hooks/useStudents';
 import useGroups from './hooks/useGroups';
 import useAwards from './hooks/useAwards';
 import { genId, emailValid, getIndividualLeaderboard, getGroupLeaderboard, nameFromEmail } from './utils';
 import useBadges from './hooks/useBadges';
+
+function Card({ className = '', ...props }) {
+  return <BaseCard {...props} className={`${className} bg-white/80`} />;
+}
 
 export default function Student({
   selectedStudentId = '',

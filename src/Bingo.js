@@ -1,7 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { questions, studentAnswers, studentIds } from './bingoData';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { questions } from './bingoData';
+import useStudents from './hooks/useStudents';
 
 export default function Bingo({ selectedStudentId }) {
+  const [students] = useStudents();
+
+  const studentAnswers = useMemo(() => {
+    const map = {};
+    for (const s of students) {
+      if (s.bingo) map[s.id] = { name: s.name, ...s.bingo };
+    }
+    return map;
+  }, [students]);
+
+  const studentIds = useMemo(() => Object.keys(studentAnswers), [studentAnswers]);
+
+
   const [matches, setMatches] = useState({ Q1: null, Q2: null, Q3: null, Q4: null });
   const [logged, setLogged] = useState({
     row1: false,
@@ -87,6 +102,7 @@ export default function Bingo({ selectedStudentId }) {
   return (
     <div className="p-4">
 
+
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <label className="mr-2">Kies je student:</label>
@@ -111,6 +127,7 @@ export default function Bingo({ selectedStudentId }) {
         <div>Diagonale bingo: {hasDiagonal ? 'ja' : 'nee'}</div>
         <div>Volle kaart: {hasFull ? 'ja' : 'nee'}</div>
       </div>
+
 
       <div className="grid grid-cols-2 gap-4">
         {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => {

@@ -8,6 +8,7 @@ import useStudents from './hooks/useStudents';
 import useTeachers from './hooks/useTeachers';
 import { nameFromEmail, genId } from './utils';
 import bcrypt from 'bcryptjs';
+import Bingo from './Bingo';
 
 export default function App() {
   const getRoute = () => (typeof location !== 'undefined' && location.hash ? location.hash.slice(1) : '/');
@@ -83,6 +84,8 @@ export default function App() {
               }}
             />
           )
+        ) : route === '/bingo' ? (
+          <Bingo />
         ) : route === '/roster' ? (
           isAdmin ? (
             <AdminRoster />

@@ -131,8 +131,8 @@ export default function Bingo({ selectedStudentId }) {
                 <div>
                   <div className="font-semibold mb-1">{questions[q]}</div>
                   <ul className="list-disc ml-4 mb-2">
-                    {studentAnswers[activeStudent][q].map((a) => (
-                      <li key={a}>{a}</li>
+                    {studentAnswers[activeStudent][q].map((a, i) => (
+                      <li key={i}>{a}</li>
                     ))}
                   </ul>
                   <select

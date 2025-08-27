@@ -412,15 +412,25 @@ export default function Student({
             <Card title="Jouw recente activiteiten" className="lg:col-span-2 max-h-[320px] overflow-auto">
               <ul className="space-y-2 text-sm">
                 {myAwards.length === 0 && <li>Geen recente items.</li>}
-                {myAwards.map((a) => (
-                  <li key={a.id} className="flex justify-between gap-2">
-                    <span>
-                      {new Date(a.ts).toLocaleString()} · {a.type === 'student' ? 'Individueel' : `Groep (${myGroup?.name || '-'})`}{' '}
-                      {a.reason ? `— ${a.reason}` : ''}
-                    </span>
-                    <span className={`font-semibold ${a.amount >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>{a.amount >= 0 ? '+' : ''}{a.amount}</span>
-                  </li>
-                ))}
+                {myAwards.map((a) => {
+                  const isBadge = a.reason?.startsWith('Badge');
+                  return (
+                    <li key={a.id} className="flex justify-between gap-2">
+                      <span>
+                        {new Date(a.ts).toLocaleString()} · {isBadge
+                          ? 'Badges toegekend'
+                          : a.type === 'student'
+                          ? 'Individueel'
+                          : `Groep (${myGroup?.name || '-'})`}{' '}
+                        {!isBadge && a.reason ? `— ${a.reason}` : ''}
+                      </span>
+                      <span className={`font-semibold ${a.amount >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                        {a.amount >= 0 ? '+' : ''}
+                        {a.amount}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </Card>
 

@@ -375,6 +375,23 @@ export default function Student({
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <Card title="Bingo" className="lg:col-span-5">
+              {me ? (
+                <Button
+                  className="bg-indigo-600 text-white"
+                  onClick={() => {
+                    window.location.hash = '/bingo';
+                  }}
+                >
+                  Bekijk bingokaart
+                </Button>
+              ) : (
+                <p className="text-sm text-neutral-600">
+                  Selecteer een student om de bingokaart te bekijken.
+                </p>
+              )}
+            </Card>
+
             <Card title="Badges" className="lg:col-span-3">
               {me ? (
                 <>

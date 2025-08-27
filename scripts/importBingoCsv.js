@@ -94,11 +94,8 @@ function main() {
     for (const q of ['Q1', 'Q2', 'Q3', 'Q4']) {
       const idx = qIdx[q];
       const raw = idx >= 0 ? cols[idx] || '' : '';
-      const arr = splitAnswers(raw);
-      if (arr.length < 3) {
-        console.error(`${email}: minder dan 3 antwoorden voor ${q}`);
-        return;
-      }
+      const arr = splitAnswers(raw).slice(0, 3);
+      while (arr.length < 3) arr.push('');
       answers[q] = arr;
     }
 

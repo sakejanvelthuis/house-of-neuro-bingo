@@ -105,20 +105,7 @@ export default function Bingo({ selectedStudentId }) {
 
 
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <label className="mr-2">Kies je student:</label>
-          <select
-            value={activeStudent}
-            onChange={(e) => resetState(e.target.value)}
-            className="border p-1"
-          >
-            {studentIds.map((id) => (
-              <option key={id} value={id}>
-                {studentAnswers[id].name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <div className="font-semibold">{studentAnswers[activeStudent].name}</div>
         <a href="#/student" className="px-4 py-2 border rounded self-start">Terug naar puntenoverzicht</a>
       </div>
 

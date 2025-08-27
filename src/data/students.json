@@ -2,7 +2,7 @@
   {
     "id": "student1",
     "name": "student1",
-    "email": "student1@example.com",
+    "email": "student1@student.nhlstenden.com",
     "password": "1234",
     "groupId": null,
     "points": 0,
@@ -33,7 +33,7 @@
   {
     "id": "student2",
     "name": "student2",
-    "email": "student2@example.com",
+    "email": "student2@student.nhlstenden.com",
     "password": "1234",
     "groupId": null,
     "points": 0,
@@ -64,7 +64,7 @@
   {
     "id": "student3",
     "name": "student3",
-    "email": "student3@example.com",
+    "email": "student3@student.nhlstenden.com",
     "password": "1234",
     "groupId": null,
     "points": 0,
@@ -95,7 +95,7 @@
   {
     "id": "student4",
     "name": "student4",
-    "email": "student4@example.com",
+    "email": "student4@student.nhlstenden.com",
     "password": "1234",
     "groupId": null,
     "points": 0,

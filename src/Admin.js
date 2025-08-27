@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, Button, TextInput, Select } from './components/ui';
 import BadgeChecklist from './components/BadgeChecklist';
 import useStudents from './hooks/useStudents';
@@ -17,6 +17,48 @@ import useTeachers from './hooks/useTeachers';
 import bcrypt from 'bcryptjs';
 import usePersistentState from './hooks/usePersistentState';
 import { questions } from './bingoData';
+
+function parseCsv(content) {
+  const records = [];
+  let field = '';
+  let record = [];
+  let inQuotes = false;
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+    if (char === '"') {
+      const next = content[i + 1];
+      if (inQuotes && next === '"') {
+        field += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      record.push(field);
+      field = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && content[i + 1] === '\n') i++;
+      record.push(field);
+      records.push(record);
+      field = '';
+      record = [];
+    } else {
+      field += char;
+    }
+  }
+  if (field || record.length) {
+    record.push(field);
+    records.push(record);
+  }
+  return records;
+}
+
+function splitAnswers(str) {
+  return str
+    .split(/[;,\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 const BADGE_POINTS = 50;
 
@@ -58,6 +100,64 @@ export default function Admin({ onLogout = () => {} }) {
     groupLeaderboard.forEach((g) => m.set(g.id, g));
     return m;
   }, [groupLeaderboard]);
+
+  const fileInputRef = useRef(null);
+
+  const handleCsvFile = useCallback(
+    (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const content = ev.target.result;
+          const rows = parseCsv(content);
+          if (!rows.length) return;
+          const headers = rows[0];
+          const dataRows = rows
+            .slice(1)
+            .filter((r) => r.length && r.some((cell) => cell.trim().length));
+          const emailIdx = headers.findIndex((h) => /email/i.test(h));
+          if (emailIdx === -1) return;
+          const qIdx = {};
+          ['Q1', 'Q2', 'Q3', 'Q4'].forEach((q) => {
+            const idx = headers.findIndex((h) => h.startsWith(q));
+            qIdx[q] = idx;
+          });
+          let success = 0;
+          setStudents((prev) => {
+            const map = new Map(prev.map((s) => [s.email?.toLowerCase(), s]));
+            dataRows.forEach((cols) => {
+              const email = (cols[emailIdx] || '').trim().toLowerCase();
+              const student = map.get(email);
+              if (!student) return;
+              const answers = {};
+              for (const q of ['Q1', 'Q2', 'Q3', 'Q4']) {
+                const idx = qIdx[q];
+                const raw = idx >= 0 ? cols[idx] || '' : '';
+                const arr = splitAnswers(raw).slice(0, 3);
+                while (arr.length < 3) arr.push('');
+                answers[q] = arr;
+              }
+              student.bingo = { ...student.bingo, ...answers };
+              success++;
+            });
+            return Array.from(map.values());
+          });
+          window.alert(`${success} studenten succesvol gekoppeld.`);
+        } catch {
+          window.alert('CSV import mislukt');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    },
+    [setStudents]
+  );
+
+  const importCsvStudents = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
 
   const addStudent = useCallback(
     (
@@ -324,10 +424,20 @@ export default function Admin({ onLogout = () => {} }) {
           </Button>
         </div>
 
-      {page === 'manage-students' && (
-        <Card title="Studenten beheren">
-          <div className="grid grid-cols-1 gap-2">
-            <TextInput value={newStudent} onChange={setNewStudent} placeholder="Naam" />
+{page === 'manage-students' && (
+    <Card title="Studenten beheren">
+      <div className="grid grid-cols-1 gap-2">
+        <input
+          type="file"
+          accept=".csv"
+          ref={fileInputRef}
+          onChange={handleCsvFile}
+          className="hidden"
+        />
+        <Button className="bg-indigo-600 text-white" onClick={importCsvStudents}>
+          Importeer CSV-gegevens
+        </Button>
+        <TextInput value={newStudent} onChange={setNewStudent} placeholder="Naam" />
             <TextInput
               value={newStudentEmail}
               onChange={setNewStudentEmail}

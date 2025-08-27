@@ -1,16 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { questions, studentAnswers, studentIds } from './bingoData';
 
-export default function Bingo() {
-  const [activeStudent, setActiveStudent] = useState(studentIds[0]);
+export default function Bingo({ selectedStudentId }) {
   const [matches, setMatches] = useState({ Q1: null, Q2: null, Q3: null, Q4: null });
-  const [logged, setLogged] = useState({ row1: false, row2: false, col1: false, col2: false, diag1: false, diag2: false, full: false });
+  const [logged, setLogged] = useState({
+    row1: false,
+    row2: false,
+    col1: false,
+    col2: false,
+    diag1: false,
+    diag2: false,
+    full: false,
+  });
 
-  const resetState = (studentId) => {
-    setActiveStudent(studentId);
+  useEffect(() => {
     setMatches({ Q1: null, Q2: null, Q3: null, Q4: null });
-    setLogged({ row1: false, row2: false, col1: false, col2: false, diag1: false, diag2: false, full: false });
-  };
+    setLogged({
+      row1: false,
+      row2: false,
+      col1: false,
+      col2: false,
+      diag1: false,
+      diag2: false,
+      full: false,
+    });
+  }, [selectedStudentId]);
+
+  if (!selectedStudentId || !studentAnswers[selectedStudentId]) {
+    return (
+      <div className="p-4">
+        <p>Je moet ingelogd zijn om jouw bingokaart te bekijken.</p>
+      </div>
+    );
+  }
+
+  const activeStudent = selectedStudentId;
 
   const checkPatterns = (m) => {
     const newLogged = { ...logged };
@@ -57,20 +81,6 @@ export default function Bingo() {
 
   return (
     <div className="p-4">
-      <div className="mb-4">
-        <label className="mr-2">Kies je student:</label>
-        <select
-          value={activeStudent}
-          onChange={(e) => resetState(e.target.value)}
-          className="border p-1"
-        >
-          {studentIds.map((id) => (
-            <option key={id} value={id}>
-              {studentAnswers[id].name}
-            </option>
-          ))}
-        </select>
-      </div>
       <div className="grid grid-cols-2 gap-4">
         {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => {
           const cell = matches[q];

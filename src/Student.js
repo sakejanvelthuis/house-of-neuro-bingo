@@ -8,7 +8,7 @@ import { genId, emailValid, getIndividualLeaderboard, getGroupLeaderboard, nameF
 import useBadges from './hooks/useBadges';
 
 function Card({ className = '', ...props }) {
-  return <BaseCard {...props} className={`${className} bg-white/80`} />;
+  return <BaseCard {...props} className={`${className} bg-white/50`} />;
 }
 
 export default function Student({

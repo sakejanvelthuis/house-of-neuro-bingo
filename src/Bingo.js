@@ -9,7 +9,8 @@ export default function Bingo({ selectedStudentId }) {
   const studentAnswers = useMemo(() => {
     const map = {};
     for (const s of students) {
-      if (s.bingo) map[s.id] = { name: s.name, ...s.bingo };
+      const bingo = s.bingo || { Q1: [], Q2: [], Q3: [], Q4: [] };
+      map[s.id] = { name: s.name, ...bingo };
     }
     return map;
   }, [students]);

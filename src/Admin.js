@@ -4,12 +4,19 @@ import BadgeChecklist from './components/BadgeChecklist';
 import useStudents from './hooks/useStudents';
 import useGroups from './hooks/useGroups';
 import useAwards from './hooks/useAwards';
-import { genId, emailValid, getIndividualLeaderboard, getGroupLeaderboard, teacherEmailValid } from './utils';
+import {
+  genId,
+  emailValid,
+  getIndividualLeaderboard,
+  getGroupLeaderboard,
+  teacherEmailValid,
+} from './utils';
 import Student from './Student';
 import useBadges from './hooks/useBadges';
 import useTeachers from './hooks/useTeachers';
 import bcrypt from 'bcryptjs';
 import usePersistentState from './hooks/usePersistentState';
+import { questions } from './bingoData';
 
 const BADGE_POINTS = 50;
 
@@ -52,14 +59,31 @@ export default function Admin({ onLogout = () => {} }) {
     return m;
   }, [groupLeaderboard]);
 
-  const addStudent = useCallback((name, email, password = '') => {
-    const id = genId();
-    setStudents((prev) => [
-      ...prev,
-      { id, name, email: email || undefined, password, groupId: null, points: 0, badges: [] }
-    ]);
-    return id;
-  }, [setStudents]);
+  const addStudent = useCallback(
+    (
+      name,
+      email,
+      password = '',
+      bingo = { Q1: [], Q2: [], Q3: [], Q4: [] }
+    ) => {
+      const id = genId();
+      setStudents((prev) => [
+        ...prev,
+        {
+          id,
+          name,
+          email: email || undefined,
+          password,
+          groupId: null,
+          points: 0,
+          badges: [],
+          bingo,
+        },
+      ]);
+      return id;
+    },
+    [setStudents]
+  );
 
   const removeStudent = useCallback((id) => {
     setStudents((prev) => prev.filter((s) => s.id !== id));
@@ -74,6 +98,34 @@ export default function Admin({ onLogout = () => {} }) {
     );
     window.alert(`Nieuwe code: ${code}`);
   }, [setStudents]);
+
+  const editStudentBingo = useCallback(
+    (id) => {
+      const s = studentById.get(id);
+      if (!s) return;
+      const parse = (str, key) => {
+        const input =
+          window.prompt(
+            `${questions[key]} (komma-gescheiden)`,
+            (str || []).join(', ')
+          ) || '';
+        return input
+          .split(',')
+          .map((a) => a.trim())
+          .filter(Boolean);
+      };
+      const bingo = {
+        Q1: parse(s.bingo?.Q1, 'Q1'),
+        Q2: parse(s.bingo?.Q2, 'Q2'),
+        Q3: parse(s.bingo?.Q3, 'Q3'),
+        Q4: parse(s.bingo?.Q4, 'Q4'),
+      };
+      setStudents((prev) =>
+        prev.map((st) => (st.id === id ? { ...st, bingo } : st))
+      );
+    },
+    [studentById, setStudents]
+  );
 
   const addGroup = useCallback((name) => {
     const id = genId();
@@ -131,6 +183,7 @@ export default function Admin({ onLogout = () => {} }) {
 
   const [newStudent, setNewStudent] = useState('');
   const [newStudentEmail, setNewStudentEmail] = useState('');
+  const [newBingo, setNewBingo] = useState({ Q1: '', Q2: '', Q3: '', Q4: '' });
   const [studentSort, setStudentSort] = useState('name');
   const [newGroup, setNewGroup] = useState('');
   const [newTeacherEmail, setNewTeacherEmail] = useState('');
@@ -285,15 +338,42 @@ export default function Admin({ onLogout = () => {} }) {
                 Alleen adressen eindigend op @student.nhlstenden.com zijn toegestaan.
               </div>
             )}
+            <TextInput
+              value={newBingo.Q1}
+              onChange={(v) => setNewBingo((p) => ({ ...p, Q1: v }))}
+              placeholder={`${questions.Q1} (komma-gescheiden)`}
+            />
+            <TextInput
+              value={newBingo.Q2}
+              onChange={(v) => setNewBingo((p) => ({ ...p, Q2: v }))}
+              placeholder={`${questions.Q2} (komma-gescheiden)`}
+            />
+            <TextInput
+              value={newBingo.Q3}
+              onChange={(v) => setNewBingo((p) => ({ ...p, Q3: v }))}
+              placeholder={`${questions.Q3} (komma-gescheiden)`}
+            />
+            <TextInput
+              value={newBingo.Q4}
+              onChange={(v) => setNewBingo((p) => ({ ...p, Q4: v }))}
+              placeholder={`${questions.Q4} (komma-gescheiden)`}
+            />
             <Button
               className="bg-indigo-600 text-white"
               disabled={!newStudent.trim() || (newStudentEmail.trim() !== '' && !emailValid(newStudentEmail))}
               onClick={() => {
                 const name = newStudent.trim();
                 const email = newStudentEmail.trim();
-                addStudent(name, email || undefined);
+                const bingo = {
+                  Q1: newBingo.Q1.split(',').map((a) => a.trim()).filter(Boolean),
+                  Q2: newBingo.Q2.split(',').map((a) => a.trim()).filter(Boolean),
+                  Q3: newBingo.Q3.split(',').map((a) => a.trim()).filter(Boolean),
+                  Q4: newBingo.Q4.split(',').map((a) => a.trim()).filter(Boolean),
+                };
+                addStudent(name, email || undefined, '', bingo);
                 setNewStudent('');
                 setNewStudentEmail('');
+                setNewBingo({ Q1: '', Q2: '', Q3: '', Q4: '' });
               }}
             >
               Voeg student toe
@@ -349,6 +429,12 @@ export default function Admin({ onLogout = () => {} }) {
                           </option>
                         ))}
                       </Select>
+                      <Button
+                        className="bg-indigo-600 text-white"
+                        onClick={() => editStudentBingo(s.id)}
+                      >
+                        Bingo bewerken
+                      </Button>
                       <Button
                         className="bg-indigo-600 text-white"
                         onClick={() => resetStudentPassword(s.id)}

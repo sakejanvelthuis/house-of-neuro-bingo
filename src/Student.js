@@ -38,14 +38,31 @@ export default function Student({
     [groups, students]
   );
 
-  const addStudent = useCallback((name, email, password = '') => {
-    const id = genId();
-    setStudents((prev) => [
-      ...prev,
-      { id, name, email: email || undefined, password, groupId: null, points: 0, badges: [] }
-    ]);
-    return id;
-  }, [setStudents]);
+  const addStudent = useCallback(
+    (
+      name,
+      email,
+      password = '',
+      bingo = { Q1: [], Q2: [], Q3: [], Q4: [] }
+    ) => {
+      const id = genId();
+      setStudents((prev) => [
+        ...prev,
+        {
+          id,
+          name,
+          email: email || undefined,
+          password,
+          groupId: null,
+          points: 0,
+          badges: [],
+          bingo,
+        },
+      ]);
+      return id;
+    },
+    [setStudents]
+  );
 
   useEffect(() => {
     if (!inPreview && selectedStudentId && !students.find((s) => s.id === selectedStudentId)) {

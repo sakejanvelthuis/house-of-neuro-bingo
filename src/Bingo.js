@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { questions } from './bingoData';
 import useStudents from './hooks/useStudents';
@@ -14,6 +15,7 @@ export default function Bingo({ selectedStudentId }) {
   }, [students]);
 
   const studentIds = useMemo(() => Object.keys(studentAnswers), [studentAnswers]);
+
 
   const [matches, setMatches] = useState({ Q1: null, Q2: null, Q3: null, Q4: null });
   const [logged, setLogged] = useState({
@@ -92,8 +94,41 @@ export default function Bingo({ selectedStudentId }) {
     if (match) checkPatterns(next);
   };
 
+  const hasHorizontal = logged.row1 || logged.row2;
+  const hasVertical = logged.col1 || logged.col2;
+  const hasDiagonal = logged.diag1 || logged.diag2;
+  const hasFull = logged.full;
+
   return (
     <div className="p-4">
+
+
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <label className="mr-2">Kies je student:</label>
+          <select
+            value={activeStudent}
+            onChange={(e) => resetState(e.target.value)}
+            className="border p-1"
+          >
+            {studentIds.map((id) => (
+              <option key={id} value={id}>
+                {studentAnswers[id].name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <a href="#/student" className="px-4 py-2 border rounded self-start">Terug naar puntenoverzicht</a>
+      </div>
+
+      <div className="mb-4">
+        <div>Horizontale bingo: {hasHorizontal ? 'ja' : 'nee'}</div>
+        <div>Verticale bingo: {hasVertical ? 'ja' : 'nee'}</div>
+        <div>Diagonale bingo: {hasDiagonal ? 'ja' : 'nee'}</div>
+        <div>Volle kaart: {hasFull ? 'ja' : 'nee'}</div>
+      </div>
+
+
       <div className="grid grid-cols-2 gap-4">
         {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => {
           const cell = matches[q];

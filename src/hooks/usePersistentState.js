@@ -19,6 +19,12 @@ function saveLS(key, value) {
 
 export default function usePersistentState(key, initial) {
   const [state, setState] = useState(() => loadLS(key, initial));
+
+  // if the storage key changes (e.g. bumped version), reload seed data
+  useEffect(() => {
+    setState(loadLS(key, initial));
+  }, [key]);
+
   useEffect(() => saveLS(key, state), [key, state]);
   return [state, setState];
 }

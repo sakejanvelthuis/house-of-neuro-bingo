@@ -3,11 +3,25 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_CSV = path.join(__dirname, '../data/responses.csv');
-const csvPath = process.argv[2] || DEFAULT_CSV;
 
-// Dit script koppelt antwoorden uit een CSV aan bestaande studentaccounts in
-// `src/data/students.json`. Het JSON-bestand moet vooraf zijn gevuld met de
-// accounts die studenten zelf hebben aangemaakt.
+const args = process.argv.slice(2);
+const useJsdom = args.includes('--jsdom');
+const csvPath = args.find((a) => !a.startsWith('-')) || DEFAULT_CSV;
+
+/*
+Dit script koppelt antwoorden uit een CSV aan bestaande studentaccounts in
+`src/data/students.json`.
+
+Gebruik:
+  node scripts/importBingoCsv.js [pad/naar/responses.csv] [--jsdom]
+
+Na afloop wordt een opdracht geprint die je in de browserconsole kunt plakken
+om `localStorage` te vullen. Met de optionele vlag `--jsdom` wordt dat
+automatisch gedaan in een JSDOM-instantie.
+
+Het JSON-bestand moet vooraf zijn gevuld met de accounts die studenten zelf
+hebben aangemaakt.
+*/
 
 function parseCsv(content) {
   const records = [];
@@ -117,6 +131,16 @@ function main() {
   }
 
   fs.writeFileSync(studentsPath, JSON.stringify(students, null, 2) + '\n');
+  const ls = JSON.stringify(students);
+  console.log(
+    "Paste into browser console:\nlocalStorage.setItem('nm_points_students_v3', JSON.stringify(%s));",
+    ls
+  );
+  if (useJsdom) {
+    const { JSDOM } = require('jsdom');
+    const dom = new JSDOM('', { url: 'https://example.com' });
+    dom.window.localStorage.setItem('nm_points_students_v3', ls);
+  }
   console.log(`${success} studenten succesvol gekoppeld.`);
 }
 

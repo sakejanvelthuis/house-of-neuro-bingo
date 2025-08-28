@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "react-scripts build",
-    "start": "react-scripts start"
+    "start": "WDS_ALLOWED_HOSTS=all react-scripts start"
   },
   "proxy": "http://localhost:3001",
   "browserslist": {

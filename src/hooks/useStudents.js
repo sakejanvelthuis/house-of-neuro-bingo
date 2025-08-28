@@ -9,6 +9,7 @@ export default function useStudents() {
 
   // load students from JSON file and migrate any previous localStorage versions
   useEffect(() => {
+
     let cancelled = false;
     fetch('/data/students.json')
       .then((r) => r.json())
@@ -48,10 +49,12 @@ export default function useStudents() {
     return () => {
       cancelled = true;
     };
+
   }, [setStudentsBase]);
 
   const setStudents = useCallback(
     (value) => {
+
       setStudentsBase((prev) => {
         const next = typeof value === 'function' ? value(prev) : value;
         fetch('/api/students', {
@@ -61,6 +64,7 @@ export default function useStudents() {
         }).catch(() => {});
         return next;
       });
+
     },
     [setStudentsBase]
   );

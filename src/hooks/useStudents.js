@@ -3,6 +3,10 @@ import usePersistentState from './usePersistentState';
 
 const VERSION = 3;
 const LS_KEY = `nm_points_students_v${VERSION}`;
+// Base URL for the student API. Leave empty to use the same origin, which allows
+// the Create React App development server to proxy requests to the API server
+// without triggering CORS errors.
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
 
 export default function useStudents() {
   const [students, setStudentsBase] = usePersistentState(LS_KEY, []);
@@ -57,7 +61,7 @@ export default function useStudents() {
 
       setStudentsBase((prev) => {
         const next = typeof value === 'function' ? value(prev) : value;
-        fetch('/api/students', {
+        fetch(`${API_BASE_URL}/api/students`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(next),

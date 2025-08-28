@@ -1,41 +1,59 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import usePersistentState from './usePersistentState';
-import seedStudents from '../data/students.json';
 
 const VERSION = 3;
 const LS_KEY = `nm_points_students_v${VERSION}`;
 
 export default function useStudents() {
-  const [students, setStudents] = usePersistentState(LS_KEY, seedStudents);
+  const [students, setStudentsBase] = usePersistentState(LS_KEY, []);
 
-  // migrate passwords, points and bingo from previous version
+  // load students from JSON file and migrate any previous localStorage versions
   useEffect(() => {
-    try {
-      let prevData = null;
-      let prevKey = null;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('nm_points_students_v') && key !== LS_KEY) {
-          const data = JSON.parse(localStorage.getItem(key) || 'null');
-          if (Array.isArray(data)) {
-            prevData = data;
-            prevKey = key;
-            break;
+    fetch('/data/students.json')
+      .then((r) => r.json())
+      .then((seedStudents) => {
+        try {
+          let prevData = null;
+          let prevKey = null;
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('nm_points_students_v') && key !== LS_KEY) {
+              const data = JSON.parse(localStorage.getItem(key) || 'null');
+              if (Array.isArray(data)) {
+                prevData = data;
+                prevKey = key;
+                break;
+              }
+            }
           }
+          if (prevData) {
+            const merged = seedStudents.map((s) => {
+              const old = prevData.find((p) => p.id === s.id);
+              return old ? { ...s, ...old } : s;
+            });
+            setStudentsBase(merged);
+            if (prevKey) localStorage.removeItem(prevKey);
+          } else {
+            setStudentsBase(seedStudents);
+          }
+        } catch {
+          setStudentsBase(seedStudents);
         }
-      }
-      if (prevData) {
-        const merged = seedStudents.map((s) => {
-          const old = prevData.find((p) => p.id === s.id);
-          return old ? { ...s, ...old } : s;
-        });
-        setStudents(merged);
-        if (prevKey) localStorage.removeItem(prevKey);
-      }
-    } catch {
-      // ignore migration errors
-    }
-  }, [setStudents]);
+      })
+      .catch(() => {});
+  }, [setStudentsBase]);
+
+  const setStudents = useCallback(
+    (value) => {
+      setStudentsBase(value);
+      fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(value),
+      }).catch(() => {});
+    },
+    [setStudentsBase]
+  );
 
   return [students, setStudents];
 }

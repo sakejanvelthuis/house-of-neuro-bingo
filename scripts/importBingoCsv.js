@@ -5,6 +5,10 @@ const path = require('path');
 const DEFAULT_CSV = path.join(__dirname, '../data/responses.csv');
 const csvPath = process.argv[2] || DEFAULT_CSV;
 
+// Dit script koppelt antwoorden uit een CSV aan bestaande studentaccounts in
+// `src/data/students.json`. Het JSON-bestand moet vooraf zijn gevuld met de
+// accounts die studenten zelf hebben aangemaakt.
+
 function parseCsv(content) {
   const records = [];
   let field = '';
@@ -77,6 +81,7 @@ function main() {
   const students = JSON.parse(fs.readFileSync(studentsPath, 'utf8'));
 
   let success = 0;
+  const unmatched = [];
 
   dataRows.forEach((cols) => {
     const email = (cols[emailIdx] || '').trim();
@@ -87,6 +92,7 @@ function main() {
     const student = students.find((s) => s.email.toLowerCase() === email.toLowerCase());
     if (!student) {
       console.error(`Geen account gevonden voor e-mail: ${email}`);
+      unmatched.push(email);
       return;
     }
 
@@ -102,6 +108,13 @@ function main() {
     student.bingo = { ...student.bingo, ...answers };
     success++;
   });
+
+  if (unmatched.length) {
+    console.error(
+      'Voor de bovenstaande e-mails is geen account gevonden. Zorg dat alle studenten eerst een account aanmaken.'
+    );
+    process.exit(1);
+  }
 
   fs.writeFileSync(studentsPath, JSON.stringify(students, null, 2) + '\n');
   console.log(`${success} studenten succesvol gekoppeld.`);

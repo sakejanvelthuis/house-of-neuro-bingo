@@ -8,7 +8,9 @@ Bij het opstarten haalt de app de actuele studentenlijst op uit `/data/students.
 en vult hiermee `localStorage`. Wanneer de lijst met studenten wijzigt, stuurt de
 hook `useStudents` de complete array naar de endpoint `/api/students`. Het script
 `scripts/studentsApi.js` luistert op deze endpoint en overschrijft `src/data/students.json`
-met de ontvangen gegevens.
+met de ontvangen gegevens. Tijdens ontwikkeling draait deze API standaard op
+`http://localhost:3001`; de React devserver stuurt `/api`-aanroepen hierheen door.
+Voor een andere URL kan `REACT_APP_API_BASE_URL` worden ingesteld.
 
 Start de API tijdens ontwikkeling met:
 

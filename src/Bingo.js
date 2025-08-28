@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { questions } from './bingoData';
 import useStudents from './hooks/useStudents';
 
-export default function Bingo({ selectedStudentId }) {
+export default function Bingo({ selectedStudentId, previewMode = false }) {
   const [students] = useStudents();
 
   const studentAnswers = useMemo(() => {
@@ -106,7 +106,12 @@ export default function Bingo({ selectedStudentId }) {
 
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="font-semibold">{studentAnswers[activeStudent].name}</div>
-        <a href="#/student" className="px-4 py-2 border rounded self-start">Terug naar puntenoverzicht</a>
+        <a
+          href={previewMode ? '#/admin/preview' : '#/student'}
+          className="px-4 py-2 border rounded self-start"
+        >
+          Terug naar puntenoverzicht
+        </a>
       </div>
 
       <div className="mb-4">

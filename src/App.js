@@ -27,6 +27,7 @@ export default function App() {
   const denyAdmin  = () => { try { localStorage.removeItem(ADMIN_LS); } catch {} setIsAdmin(false); };
 
   const [selectedStudentId, setSelectedStudentId] = usePersistentState('nm_points_current_student', '');
+  const [previewId] = usePersistentState('nm_preview_student', '');
 
   const logoutAdmin = () => {
     denyAdmin();
@@ -87,6 +88,8 @@ export default function App() {
         ) : route === '/bingo' ? (
           selectedStudentId ? (
             <Bingo selectedStudentId={selectedStudentId} />
+          ) : isAdmin && previewId ? (
+            <Bingo selectedStudentId={previewId} previewMode />
           ) : (
             <Auth
               onAdminLogin={() => {

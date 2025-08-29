@@ -43,6 +43,18 @@ export default function useStudents() {
     setStudentsState(newStudents);
     localStorage.setItem('nm_points_students_v3', JSON.stringify(newStudents));
     window.studentsData = newStudents;
+    const baseUrl = process.env.REACT_APP_API_BASE_URL || '';
+    try {
+      fetch(`${baseUrl}/api/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newStudents)
+      }).catch(err => {
+        console.error('Failed to sync students:', err);
+      });
+    } catch (e) {
+      console.error('Failed to sync students:', e);
+    }
   };
 
   return [students, setStudents];

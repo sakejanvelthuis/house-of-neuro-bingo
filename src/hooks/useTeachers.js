@@ -1,40 +1,41 @@
-import { useEffect, useCallback } from 'react';
-import usePersistentState from './usePersistentState';
-
-const LS_KEY = 'nm_points_teachers_v1';
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+import { useState, useEffect } from 'react';
 
 export default function useTeachers() {
-  const [teachers, setTeachersBase] = usePersistentState(LS_KEY, []);
+  const [teachers, setTeachersState] = useState([]);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch('/data/teachers.json')
-      .then((r) => r.json())
-      .then((seedTeachers) => {
-        if (cancelled) return;
-        setTeachersBase((curr) => (curr.length ? curr : seedTeachers));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [setTeachersBase]);
+    // First check localStorage
+    const stored = localStorage.getItem('nm_points_teachers_v3');
+    if (stored) {
+      try {
+        const localTeachers = JSON.parse(stored);
+        if (localTeachers.length > 0) {
+          setTeachersState(localTeachers);
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing teachers from localStorage:', e);
+      }
+    }
 
-  const setTeachers = useCallback(
-    (value) => {
-      setTeachersBase((prev) => {
-        const next = typeof value === 'function' ? value(prev) : value;
-        fetch(`${API_BASE_URL}/api/teachers`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(next),
-        }).catch(() => {});
-        return next;
+    // If no localStorage data, load from JSON file
+    fetch('/data/teachers.json')  // Changed from /src/data/teachers.json
+      .then(response => response.json())
+      .then(jsonTeachers => {
+        console.log('Loaded teachers from JSON:', jsonTeachers.length);
+        setTeachersState(jsonTeachers);
+        localStorage.setItem('nm_points_teachers_v3', JSON.stringify(jsonTeachers));
+      })
+      .catch(error => {
+        console.error('Error loading teachers from JSON:', error);
       });
-    },
-    [setTeachersBase]
-  );
+  }, []);
+
+  const setTeachers = (updater) => {
+    const newTeachers = typeof updater === 'function' ? updater(teachers) : updater;
+    setTeachersState(newTeachers);
+    localStorage.setItem('nm_points_teachers_v3', JSON.stringify(newTeachers));
+  };
 
   return [teachers, setTeachers];
 }

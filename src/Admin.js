@@ -186,14 +186,52 @@ export default function Admin({ onLogout = () => {} }) {
   );
 
   const removeStudent = useCallback((id) => {
-    setStudents((prev) => prev.filter((s) => s.id !== id));
+    // Voeg toe aan verwijderde lijst voor persistentie
+    const deletedStudents = JSON.parse(localStorage.getItem('nm_deleted_students') || '[]');
+    if (!deletedStudents.includes(id)) {
+      deletedStudents.push(id);
+      localStorage.setItem('nm_deleted_students', JSON.stringify(deletedStudents));
+    }
+    
+    // Verwijder uit huidige state
+    setStudents((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      // Update localStorage
+      localStorage.setItem('nm_points_students_v3', JSON.stringify(updated));
+      return updated;
+    });
   }, [setStudents]);
+
+  const updateJsonFiles = useCallback(() => {
+    // Update students.json
+    const deletedStudents = JSON.parse(localStorage.getItem('nm_deleted_students') || '[]');
+    fetch('/data/students.json')
+      .then(response => response.json())
+      .then(jsonStudents => {
+        const updatedStudents = jsonStudents.filter(s => !deletedStudents.includes(s.id));
+        const dataStr = JSON.stringify(updatedStudents, null, 2);
+        
+        // Download updated file (user moet deze handmatig vervangen)
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'students-updated.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert('Download students-updated.json en vervang /public/data/students.json');
+      })
+      .catch(error => console.error('Error updating JSON:', error));
+  }, []);
 
   const resetStudentPassword = useCallback((id) => {
     const code = Math.random().toString(36).slice(2, 8);
+    const hashedCode = bcrypt.hashSync(code, 10); // Hash de temp code
+    
     setStudents((prev) =>
       prev.map((s) =>
-        s.id === id ? { ...s, password: '', tempCode: code } : s
+        s.id === id ? { ...s, password: hashedCode, tempCode: code } : s
       )
     );
     window.alert(`Nieuwe code: ${code}`);
@@ -436,6 +474,9 @@ export default function Admin({ onLogout = () => {} }) {
         />
         <Button className="bg-indigo-600 text-white" onClick={importCsvStudents}>
           Importeer CSV-gegevens
+        </Button>
+        <Button className="bg-green-600 text-white" onClick={updateJsonFiles}>
+          Update JSON Bestanden
         </Button>
         <TextInput value={newStudent} onChange={setNewStudent} placeholder="Naam" />
             <TextInput

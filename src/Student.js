@@ -6,6 +6,7 @@ import useGroups from './hooks/useGroups';
 import useAwards from './hooks/useAwards';
 import { genId, emailValid, getIndividualLeaderboard, getGroupLeaderboard, nameFromEmail } from './utils';
 import useBadges from './hooks/useBadges';
+import bcrypt from 'bcryptjs';
 
 function Card({ className = '', ...props }) {
   return <BaseCard {...props} className={`${className} bg-white/50`} />;
@@ -201,7 +202,7 @@ export default function Student({
     const id = resetStudent.id;
     const pass = newPassword.trim();
     setStudents((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, password: pass, tempCode: undefined } : s))
+      prev.map((s) => (s.id === id ? { ...s, password: bcrypt.hashSync(pass, 10), tempCode: undefined } : s))
     );
     setResetStudent(null);
     setSelectedStudentId(id);

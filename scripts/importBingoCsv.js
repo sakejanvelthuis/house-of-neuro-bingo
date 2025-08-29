@@ -3,66 +3,41 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_CSV = path.join(__dirname, '../data/responses.csv');
+const csvPath = process.argv[2] || DEFAULT_CSV;
 
-const args = process.argv.slice(2);
-const useJsdom = args.includes('--jsdom');
-const csvPath = args.find((a) => !a.startsWith('-')) || DEFAULT_CSV;
-
-/*
-Dit script koppelt antwoorden uit een CSV aan bestaande studentaccounts in
-`src/data/students.json`.
-
-Gebruik:
-  node scripts/importBingoCsv.js [pad/naar/responses.csv] [--jsdom]
-
-Na afloop wordt een opdracht geprint die je in de browserconsole kunt plakken
-om `localStorage` te vullen. Met de optionele vlag `--jsdom` wordt dat
-automatisch gedaan in een JSDOM-instantie.
-
-Het JSON-bestand moet vooraf zijn gevuld met de accounts die studenten zelf
-hebben aangemaakt.
-*/
+// Data storage paths
+const DATA_DIR = path.join(__dirname, '../src/data');
+const STUDENTS_FILE = path.join(DATA_DIR, 'students.json');
 
 function parseCsv(content) {
   const records = [];
   let field = '';
   let record = [];
   let inQuotes = false;
+  
   for (let i = 0; i < content.length; i++) {
     const char = content[i];
     if (char === '"') {
-      const next = content[i + 1];
-      if (inQuotes && next === '"') {
-        field += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
+      inQuotes = !inQuotes;
     } else if (char === ',' && !inQuotes) {
       record.push(field);
       field = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && content[i + 1] === '\n') i++;
+    } else if (char === '\n' && !inQuotes) {
       record.push(field);
       records.push(record);
-      field = '';
       record = [];
+      field = '';
     } else {
       field += char;
     }
   }
+  
   if (field || record.length) {
     record.push(field);
     records.push(record);
   }
+  
   return records;
-}
-
-function splitAnswers(str) {
-  return str
-    .split(/[;,\n]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
 }
 
 function main() {
@@ -70,78 +45,100 @@ function main() {
     console.error(`CSV-bestand niet gevonden: ${csvPath}`);
     process.exit(1);
   }
+
+  // Ensure data directory exists
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+
+  // Read current students data (check both sources)
+  let students = [];
+  if (fs.existsSync(STUDENTS_FILE)) {
+    try {
+      students = JSON.parse(fs.readFileSync(STUDENTS_FILE, 'utf8'));
+    } catch (e) {
+      console.error('Fout bij lezen students.json:', e.message);
+      process.exit(1);
+    }
+  }
+
+  // Check for browser data in global variable (if available)
+  if (typeof window !== 'undefined' && window.studentsData) {
+    try {
+      const browserStudents = window.studentsData;
+      // Merge with existing students (browser data takes precedence for new accounts)
+      const existingEmails = new Set(students.map(s => s.email.toLowerCase()));
+      const newStudents = browserStudents.filter(s => !existingEmails.has(s.email.toLowerCase()));
+      if (newStudents.length > 0) {
+        students = [...students, ...newStudents];
+        console.log(`Merged ${newStudents.length} students from browser data`);
+      }
+    } catch (e) {
+      console.error('Fout bij samenvoegen browser data:', e.message);
+    }
+  }
+
   const content = fs.readFileSync(csvPath, 'utf8');
   const rows = parseCsv(content);
+  
   if (!rows.length) {
-    console.error('CSV-bestand is leeg');
+    console.error('Geen data gevonden in CSV');
     process.exit(1);
   }
+
   const headers = rows[0];
   const dataRows = rows.slice(1).filter(r => r.length && r.some(cell => cell.trim().length));
 
+  // Find column indices
   const emailIdx = headers.findIndex(h => /email/i.test(h));
   if (emailIdx === -1) {
-    console.error('Geen e-mailkolom gevonden');
+    console.error('Geen email kolom gevonden in CSV');
     process.exit(1);
   }
 
   const qIdx = {};
   ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
-    const idx = headers.findIndex(h => h.startsWith(q));
-    qIdx[q] = idx;
+    qIdx[q] = headers.findIndex(h => h === q);
+    if (qIdx[q] === -1) {
+      console.error(`Kolom ${q} niet gevonden in CSV`);
+      process.exit(1);
+    }
   });
-
-  const studentsPath = path.join(__dirname, '../src/data/students.json');
-  const students = JSON.parse(fs.readFileSync(studentsPath, 'utf8'));
 
   let success = 0;
   const unmatched = [];
 
   dataRows.forEach((cols) => {
-    const email = (cols[emailIdx] || '').trim();
-    if (!email) {
-      console.error('Lege e-mail gevonden');
-      return;
-    }
-    const student = students.find((s) => s.email.toLowerCase() === email.toLowerCase());
+    const email = (cols[emailIdx] || '').trim().toLowerCase();
+    if (!email) return;
+
+    const student = students.find((s) => s.email.toLowerCase() === email);
     if (!student) {
-      console.error(`Geen account gevonden voor e-mail: ${email}`);
       unmatched.push(email);
       return;
     }
 
-    const answers = {};
-    for (const q of ['Q1', 'Q2', 'Q3', 'Q4']) {
-      const idx = qIdx[q];
-      const raw = idx >= 0 ? cols[idx] || '' : '';
-      const arr = splitAnswers(raw).slice(0, 3);
-      while (arr.length < 3) arr.push('');
-      answers[q] = arr;
-    }
-
-    student.bingo = { ...student.bingo, ...answers };
+    // Update bingo answers
+    student.bingo = {
+      Q1: cols[qIdx.Q1].split(',').map(s => s.trim()),
+      Q2: cols[qIdx.Q2].split(',').map(s => s.trim()),
+      Q3: cols[qIdx.Q3].split(',').map(s => s.trim()),
+      Q4: cols[qIdx.Q4].split(',').map(s => s.trim())
+    };
     success++;
   });
 
+  // Save updated students data
+  fs.writeFileSync(STUDENTS_FILE, JSON.stringify(students, null, 2));
+
+  console.log(`${success} studenten succesvol gekoppeld.`);
+  
   if (unmatched.length) {
-    console.error(
-      'Voor de bovenstaande e-mails is geen account gevonden. Zorg dat alle studenten eerst een account aanmaken.'
-    );
+    console.log('\nNiet gevonden emails:');
+    unmatched.forEach(email => console.log(`- ${email}`));
+    console.log('\nZorg dat alle studenten eerst een account aanmaken.');
     process.exit(1);
   }
-
-  fs.writeFileSync(studentsPath, JSON.stringify(students, null, 2) + '\n');
-  const ls = JSON.stringify(students);
-  console.log(
-    "Paste into browser console:\nlocalStorage.setItem('nm_points_students_v3', JSON.stringify(%s));",
-    ls
-  );
-  if (useJsdom) {
-    const { JSDOM } = require('jsdom');
-    const dom = new JSDOM('', { url: 'https://example.com' });
-    dom.window.localStorage.setItem('nm_points_students_v3', ls);
-  }
-  console.log(`${success} studenten succesvol gekoppeld.`);
 }
 
 main();

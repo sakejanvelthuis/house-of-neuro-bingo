@@ -7,6 +7,7 @@ import usePersistentState from './hooks/usePersistentState';
 import useStudents from './hooks/useStudents';
 import useTeachers from './hooks/useTeachers';
 import { nameFromEmail, genId } from './utils';
+import { hashPassword, verifyPassword } from './utils/hash';
 import bcrypt from 'bcryptjs';
 import Bingo from './Bingo';
 
@@ -228,14 +229,19 @@ function Auth({ onStudentLogin, onAdminLogin }) {
   const [students, setStudents] = useStudents();
   const [teachers, setTeachers] = useTeachers();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const norm = loginEmail.trim().toLowerCase();
     const pass = loginPassword.trim();
     if (norm.endsWith('@student.nhlstenden.com')) {
       const s = students.find((st) => (st.email || '').toLowerCase() === norm);
-      if (s && (s.password || '') === pass) {
-        setLoginError('');
-        onStudentLogin(s.id);
+      if (s) {
+        const isValid = await verifyPassword(pass, s.password);
+        if (isValid) {
+          setLoginError('');
+          onStudentLogin(s.id);
+        } else {
+          setLoginError('Onjuiste e-mail of wachtwoord.');
+        }
       } else {
         setLoginError('Onjuiste e-mail of wachtwoord.');
       }
@@ -256,7 +262,7 @@ function Auth({ onStudentLogin, onAdminLogin }) {
     }
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     const norm = signupEmail.trim().toLowerCase();
     if (!signupPassword.trim() || signupPassword !== signupPassword2) {
       setSignupError('Wachtwoorden komen niet overeen.');
@@ -268,10 +274,27 @@ function Auth({ onStudentLogin, onAdminLogin }) {
         return;
       }
       const id = genId();
+      const hashedPassword = await hashPassword(signupPassword.trim());
+
       setStudents((prev) => [
         ...prev,
-        { id, name: nameFromEmail(norm), email: norm, password: signupPassword.trim(), groupId: null, points: 0, badges: [] },
+        { 
+          id, 
+          name: nameFromEmail(norm), 
+          email: norm, 
+          password: hashedPassword,
+          groupId: null, 
+          points: 0, 
+          badges: [],
+          bingo: {
+            Q1: [],
+            Q2: [],
+            Q3: [],
+            Q4: []
+          }
+        },
       ]);
+
       setSignupEmail('');
       setSignupPassword('');
       setSignupPassword2('');

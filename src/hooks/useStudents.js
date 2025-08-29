@@ -1,79 +1,49 @@
-import { useEffect, useCallback } from 'react';
-import usePersistentState from './usePersistentState';
-
-const VERSION = 3;
-const LS_KEY = `nm_points_students_v${VERSION}`;
-
-// Base URL for the student API. Leave empty to use the same origin, which allows
-// the Create React App development server to proxy requests to the API server
-// without triggering CORS errors.
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
-
+import { useState, useEffect } from 'react';
 
 export default function useStudents() {
-  const [students, setStudentsBase] = usePersistentState(LS_KEY, []);
+  const [students, setStudentsState] = useState([]);
 
-  // load students from JSON file and migrate any previous localStorage versions
   useEffect(() => {
+    // First check localStorage
+    const stored = localStorage.getItem('nm_points_students_v3');
+    if (stored) {
+      try {
+        const localStudents = JSON.parse(stored);
+        if (localStudents.length > 0) {
+          setStudentsState(localStudents);
+          window.studentsData = localStudents;
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing students from localStorage:', e);
+      }
+    }
 
-    let cancelled = false;
+    // If no localStorage data, load from JSON file
     fetch('/data/students.json')
-      .then((r) => r.json())
-      .then((seedStudents) => {
-        if (cancelled) return;
-        setStudentsBase((curr) => {
-          if (curr.length) return curr;
-          try {
-            let prevData = null;
-            let prevKey = null;
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && key.startsWith('nm_points_students_v') && key !== LS_KEY) {
-                const data = JSON.parse(localStorage.getItem(key) || 'null');
-                if (Array.isArray(data)) {
-                  prevData = data;
-                  prevKey = key;
-                  break;
-                }
-              }
-            }
-            if (prevData) {
-              const merged = seedStudents.map((s) => {
-                const old = prevData.find((p) => p.id === s.id);
-                return old ? { ...s, ...old } : s;
-              });
-              if (prevKey) localStorage.removeItem(prevKey);
-              return merged;
-            }
-            return seedStudents;
-          } catch {
-            return seedStudents;
-          }
-        });
+      .then(response => response.json())
+      .then(jsonStudents => {
+        console.log('Loaded students from JSON:', jsonStudents.length);
+        
+        // Filter verwijderde studenten
+        const deletedStudents = JSON.parse(localStorage.getItem('nm_deleted_students') || '[]');
+        const filteredStudents = jsonStudents.filter(s => !deletedStudents.includes(s.id));
+        
+        setStudentsState(filteredStudents);
+        localStorage.setItem('nm_points_students_v3', JSON.stringify(filteredStudents));
+        window.studentsData = filteredStudents;
       })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-
-  }, [setStudentsBase]);
-
-  const setStudents = useCallback(
-    (value) => {
-
-      setStudentsBase((prev) => {
-        const next = typeof value === 'function' ? value(prev) : value;
-        fetch(`${API_BASE_URL}/api/students`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(next),
-        }).catch(() => {});
-        return next;
+      .catch(error => {
+        console.error('Error loading students from JSON:', error);
       });
+  }, []);
 
-    },
-    [setStudentsBase]
-  );
+  const setStudents = (updater) => {
+    const newStudents = typeof updater === 'function' ? updater(students) : updater;
+    setStudentsState(newStudents);
+    localStorage.setItem('nm_points_students_v3', JSON.stringify(newStudents));
+    window.studentsData = newStudents;
+  };
 
   return [students, setStudents];
 }

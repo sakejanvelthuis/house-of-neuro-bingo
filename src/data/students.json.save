@@ -1,0 +1,125 @@
+cat > src/data/students.json << 'EOF'
+[
+  {
+    "id": "d7f5ea72-ea92-4dc3-bcdd-9dbd6a5986a2",
+    "name": "Student1",
+    "email": "student1@student.nhlstenden.com",
+    "password": "st1",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  },
+  {
+    "id": "741fa587-42f2-4827-b815-0412ab80ce69",
+    "name": "Student2",
+    "email": "student2@student.nhlstenden.com",
+    "password": "st2",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  },
+  {
+    "id": "8b815a86-002b-4e6e-87a1-475a3a732504",
+    "name": "Student3",
+    "email": "student3@student.nhlstenden.com",
+    "password": "st3",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  },
+  {
+    "id": "26a0fca3-7d19-45b6-9172-ab4e09a87c17",
+    "name": "Student4",
+    "email": "student4@student.nhlstenden.com",
+    "password": "st4",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  }
+]
+EOF[
+  {
+    "id": "d7f5ea72-ea92-4dc3-bcdd-9dbd6a5986a2",
+    "name": "Student1",
+    "email": "student1@student.nhlstenden.com",
+    "password": "st1",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  },
+  {
+    "id": "741fa587-42f2-4827-b815-0412ab80ce69",
+    "name": "Student2",
+    "email": "student2@student.nhlstenden.com",
+    "password": "st2",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  },
+  {
+    "id": "8b815a86-002b-4e6e-87a1-475a3a732504",
+    "name": "Student3",
+    "email": "student3@student.nhlstenden.com",
+    "password": "st3",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  },
+  {
+    "id": "26a0fca3-7d19-45b6-9172-ab4e09a87c17",
+    "name": "Student4",
+    "email": "student4@student.nhlstenden.com",
+    "password": "st4",
+    "groupId": null,
+    "points": 0,
+    "badges": [],
+    "bingo": {
+      "Q1": [],
+      "Q2": [],
+      "Q3": [],
+      "Q4": []
+    }
+  }
+]

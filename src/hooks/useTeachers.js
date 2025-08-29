@@ -35,6 +35,18 @@ export default function useTeachers() {
     const newTeachers = typeof updater === 'function' ? updater(teachers) : updater;
     setTeachersState(newTeachers);
     localStorage.setItem('nm_points_teachers_v3', JSON.stringify(newTeachers));
+    const baseUrl = process.env.REACT_APP_API_BASE_URL || '';
+    try {
+      fetch(`${baseUrl}/api/teachers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTeachers)
+      }).catch(err => {
+        console.error('Failed to sync teachers:', err);
+      });
+    } catch (e) {
+      console.error('Failed to sync teachers:', e);
+    }
   };
 
   return [teachers, setTeachers];
